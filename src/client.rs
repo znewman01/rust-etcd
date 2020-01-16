@@ -109,7 +109,7 @@ impl Client<HttpsConnector<HttpConnector>> {
         endpoints: &[&str],
         basic_auth: Option<BasicAuth>,
     ) -> Result<Client<HttpsConnector<HttpConnector>>, Error> {
-        let connector = HttpsConnector::new(4)?;
+        let connector = HttpsConnector::new();
         let hyper = Hyper::builder().keep_alive(true).build(connector);
 
         Client::custom(hyper, endpoints, basic_auth)
