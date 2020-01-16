@@ -1,7 +1,9 @@
 //! Contains the etcd client. All API calls are made via the client.
 
-use futures::stream::futures_unordered;
-use futures::{Future, IntoFuture, Stream};
+use bytes::buf::BufExt;
+use futures::future::ready;
+use futures::prelude::*;
+use futures::stream::FuturesUnordered;
 use http::header::{HeaderMap, HeaderValue};
 use hyper::client::connect::{Connect, HttpConnector};
 use hyper::{Client as Hyper, StatusCode, Uri};
@@ -223,65 +225,67 @@ where
     }
 
     /// Runs a basic health check against each etcd member.
-        let futures = self.endpoints.iter().map(|endpoint| {
     pub fn health(&self) -> impl Stream<Item = Result<Response<Health>, Error>> + Send {
+        self.endpoints.iter().map(|endpoint| {
             let url = build_url(&endpoint, "health");
-            let uri = url.parse().map_err(Error::from).into_future();
+            let uri = ready(url.parse()).err_into();
             let cloned_client = self.http_client.clone();
             let response = uri.and_then(move |uri| cloned_client.get(uri).map_err(Error::from));
             response.and_then(|response| {
                 let status = response.status();
                 let cluster_info = ClusterInfo::from(response.headers());
-                let body = response.into_body().concat2().map_err(Error::from);
+                let body = hyper::body::aggregate(response.into_body())
+                    .map_ok(BufExt::reader)
+                    .err_into();
 
-                body.and_then(move |ref body| {
-                    if status == StatusCode::OK {
-                        match serde_json::from_slice::<Health>(body) {
+                body.and_then(move |body| {
+                    ready(if status == StatusCode::OK {
+                        match serde_json::from_reader::<_, Health>(body) {
                             Ok(data) => Ok(Response { data, cluster_info }),
                             Err(error) => Err(Error::Serialization(error)),
                         }
                     } else {
-                        match serde_json::from_slice::<ApiError>(body) {
+                        match serde_json::from_reader::<_, ApiError>(body) {
                             Ok(error) => Err(Error::Api(error)),
                             Err(error) => Err(Error::Serialization(error)),
                         }
-                    }
+                    })
                 })
             })
-        });
-
-        futures_unordered(futures)
+            })
+            .collect::<FuturesUnordered<_>>()
     }
 
     /// Returns version information from each etcd cluster member the client was initialized with.
-        let futures = self.endpoints.iter().map(|endpoint| {
     pub fn versions(&self) -> impl Stream<Item = Result<Response<VersionInfo>, Error>> + Send {
+        self.endpoints.iter().map(|endpoint| {
             let url = build_url(&endpoint, "version");
-            let uri = url.parse().map_err(Error::from).into_future();
+            let uri = ready(url.parse()).err_into();
             let cloned_client = self.http_client.clone();
-            let response = uri.and_then(move |uri| cloned_client.get(uri).map_err(Error::from));
+            let response = uri.and_then(move |uri| cloned_client.get(uri).err_into());
             response.and_then(|response| {
                 let status = response.status();
                 let cluster_info = ClusterInfo::from(response.headers());
-                let body = response.into_body().concat2().map_err(Error::from);
+                let body = hyper::body::aggregate(response.into_body())
+                    .err_into()
+                    .map_ok(BufExt::reader);
 
-                body.and_then(move |ref body| {
-                    if status == StatusCode::OK {
-                        match serde_json::from_slice::<VersionInfo>(body) {
+                body.and_then(move |body| {
+                    ready(if status == StatusCode::OK {
+                        match serde_json::from_reader::<_, VersionInfo>(body) {
                             Ok(data) => Ok(Response { data, cluster_info }),
                             Err(error) => Err(Error::Serialization(error)),
                         }
                     } else {
-                        match serde_json::from_slice::<ApiError>(body) {
+                        match serde_json::from_reader::<_, ApiError>(body) {
                             Ok(error) => Err(Error::Api(error)),
                             Err(error) => Err(Error::Serialization(error)),
                         }
-                    }
+                    })
                 })
             })
-        });
-
-        futures_unordered(futures)
+            })
+            .collect::<FuturesUnordered<_>>()
     }
 
     /// Lets other internal code make basic HTTP requests.
@@ -294,24 +298,26 @@ where
         T: DeserializeOwned + Send + 'static,
     {
         let http_client = self.http_client.clone();
-        let response = uri.and_then(move |uri| http_client.get(uri).map_err(Error::from));
+        let response = uri.and_then(move |uri| http_client.get(uri).err_into());
         response.and_then(|response| {
             let status = response.status();
             let cluster_info = ClusterInfo::from(response.headers());
-            let body = response.into_body().concat2().map_err(Error::from);
+            let body = hyper::body::aggregate(response.into_body())
+                .err_into()
+                .map_ok(BufExt::reader);
 
             body.and_then(move |body| {
-                if status == StatusCode::OK {
-                    match serde_json::from_slice::<T>(&body) {
+                ready(if status == StatusCode::OK {
+                    match serde_json::from_reader::<_, T>(body) {
                         Ok(data) => Ok(Response { data, cluster_info }),
                         Err(error) => Err(Error::Serialization(error)),
                     }
                 } else {
-                    match serde_json::from_slice::<ApiError>(&body) {
+                    match serde_json::from_reader::<_, ApiError>(body) {
                         Ok(error) => Err(Error::Api(error)),
                         Err(error) => Err(Error::Serialization(error)),
                     }
-                }
+                })
             })
         })
     }

@@ -2,8 +2,9 @@
 
 use std::collections::HashMap;
 
-use futures::stream::futures_unordered;
-use futures::{Future, IntoFuture, Stream};
+use futures::future::ready;
+use futures::stream::FuturesUnordered;
+use futures::{Future, Stream, TryFutureExt};
 use hyper::client::connect::Connect;
 use hyper::Uri;
 use serde_derive::{Deserialize, Serialize};
@@ -164,7 +165,7 @@ where
     C: Clone + Connect + Sync + Send,
 {
     let url = build_url(&client.endpoints()[0], "v2/stats/leader");
-    let uri = url.parse().map_err(Error::from).into_future();
+    let uri = ready(url.parse()).err_into();
 
     client.request(uri)
 }
@@ -180,12 +181,12 @@ where
 {
     let futures = client.endpoints().iter().map(|endpoint| {
         let url = build_url(&endpoint, "v2/stats/self");
-        let uri = url.parse().map_err(Error::from).into_future();
+        let uri = ready(url.parse()).err_into();
 
         client.request(uri)
     });
 
-    futures_unordered(futures)
+    futures.collect::<FuturesUnordered<_>>()
 }
 
 /// Returns statistics about operations handled by each etcd member the client was initialized
@@ -200,12 +201,12 @@ where
 {
     let futures = client.endpoints().iter().map(|endpoint| {
         let url = build_url(&endpoint, "v2/stats/store");
-        let uri = url.parse().map_err(Error::from).into_future();
+        let uri = ready(url.parse()).err_into();
 
         client.request(uri)
     });
 
-    futures_unordered(futures)
+    futures.collect::<FuturesUnordered<_>>()
 }
 
 /// Constructs the full URL for an API call.

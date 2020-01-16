@@ -4,7 +4,9 @@
 
 use std::str::FromStr;
 
-use futures::{Future, IntoFuture, Stream};
+use bytes::buf::BufExt;
+use futures::future::ready;
+use futures::{Future, TryFutureExt};
 use hyper::client::connect::Connect;
 use hyper::{StatusCode, Uri};
 use serde_derive::{Deserialize, Serialize};
@@ -61,16 +63,14 @@ where
 
     let body = match serde_json::to_string(&peer_urls) {
         Ok(body) => body,
-        Err(error) => return Box::new(Err(vec![Error::Serialization(error)]).into_future()),
+        Err(error) => return Box::new(ready(Err(vec![Error::Serialization(error)]))),
     };
 
     let http_client = client.http_client().clone();
 
     let result = first_ok(client.endpoints().to_vec(), move |member| {
         let url = build_url(member, "");
-        let uri = Uri::from_str(url.as_str())
-            .map_err(Error::from)
-            .into_future();
+        let uri = ready(Uri::from_str(url.as_str()).map_err(Error::from));
 
         let body = body.clone();
         let http_client = http_client.clone();
@@ -80,20 +80,22 @@ where
         response.and_then(|response| {
             let status = response.status();
             let cluster_info = ClusterInfo::from(response.headers());
-            let body = response.into_body().concat2().map_err(Error::from);
+            let body = hyper::body::aggregate(response.into_body())
+                .map_ok(BufExt::reader)
+                .err_into();
 
-            body.and_then(move |ref body| {
-                if status == StatusCode::CREATED {
+            body.and_then(move |body| {
+                ready(if status == StatusCode::CREATED {
                     Ok(Response {
                         data: (),
                         cluster_info,
                     })
                 } else {
-                    match serde_json::from_slice::<ApiError>(body) {
+                    match serde_json::from_reader::<_, ApiError>(body) {
                         Ok(error) => Err(Error::Api(error)),
                         Err(error) => Err(Error::Serialization(error)),
                     }
-                }
+                })
             })
         })
     });
@@ -118,9 +120,7 @@ where
 
     first_ok(client.endpoints().to_vec(), move |member| {
         let url = build_url(member, &format!("/{}", id));
-        let uri = Uri::from_str(url.as_str())
-            .map_err(Error::from)
-            .into_future();
+        let uri = ready(Uri::from_str(url.as_str()).map_err(Error::from));
 
         let http_client = http_client.clone();
 
@@ -129,20 +129,22 @@ where
         response.and_then(|response| {
             let status = response.status();
             let cluster_info = ClusterInfo::from(response.headers());
-            let body = response.into_body().concat2().map_err(Error::from);
+            let body = hyper::body::aggregate(response.into_body())
+                .map_ok(BufExt::reader)
+                .err_into();
 
-            body.and_then(move |ref body| {
-                if status == StatusCode::NO_CONTENT {
+            body.and_then(move |body| {
+                ready(if status == StatusCode::NO_CONTENT {
                     Ok(Response {
                         data: (),
                         cluster_info,
                     })
                 } else {
-                    match serde_json::from_slice::<ApiError>(body) {
+                    match serde_json::from_reader::<_, ApiError>(body) {
                         Ok(error) => Err(Error::Api(error)),
                         Err(error) => Err(Error::Serialization(error)),
                     }
-                }
+                })
             })
         })
     })
@@ -153,9 +155,9 @@ where
 /// # Parameters
 ///
 /// * client: A `Client` to use to make the API call.
-pub fn list<C>(
+pub async fn list<C>(
     client: &Client<C>,
-) -> impl Future<Output = Result<Response<Vec<Member>>, Vec<Error>>> + Send
+) -> Result<Response<Vec<Member>>, Vec<Error>>
 where
     C: Clone + Connect + Sync + Send,
 {
@@ -163,9 +165,7 @@ where
 
     first_ok(client.endpoints().to_vec(), move |member| {
         let url = build_url(member, "");
-        let uri = Uri::from_str(url.as_str())
-            .map_err(Error::from)
-            .into_future();
+        let uri = ready(Uri::from_str(url.as_str()).map_err(Error::from));
 
         let http_client = http_client.clone();
 
@@ -174,11 +174,13 @@ where
         response.and_then(|response| {
             let status = response.status();
             let cluster_info = ClusterInfo::from(response.headers());
-            let body = response.into_body().concat2().map_err(Error::from);
+            let body = hyper::body::aggregate(response.into_body())
+                .map_ok(BufExt::reader)
+                .err_into();
 
-            body.and_then(move |ref body| {
-                if status == StatusCode::OK {
-                    match serde_json::from_slice::<ListResponse>(body) {
+            body.and_then(move |body| {
+                ready(if status == StatusCode::OK {
+                    match serde_json::from_reader::<_, ListResponse>(body) {
                         Ok(data) => Ok(Response {
                             data: data.members,
                             cluster_info,
@@ -186,13 +188,13 @@ where
                         Err(error) => Err(Error::Serialization(error)),
                     }
                 } else {
-                    match serde_json::from_slice::<ApiError>(body) {
+                    match serde_json::from_reader::<_, ApiError>(body) {
                         Ok(error) => Err(Error::Api(error)),
                         Err(error) => Err(Error::Serialization(error)),
                     }
-                }
+                })
             })
-        })
+        }).await
     })
 }
 
@@ -215,16 +217,14 @@ where
 
     let body = match serde_json::to_string(&peer_urls) {
         Ok(body) => body,
-        Err(error) => return Box::new(Err(vec![Error::Serialization(error)]).into_future()),
+        Err(error) => return Box::new(ready(Err(vec![Error::Serialization(error)]))),
     };
 
     let http_client = client.http_client().clone();
 
     let result = first_ok(client.endpoints().to_vec(), move |member| {
         let url = build_url(member, &format!("/{}", id));
-        let uri = Uri::from_str(url.as_str())
-            .map_err(Error::from)
-            .into_future();
+        let uri = ready(Uri::from_str(url.as_str()).map_err(Error::from));
 
         let body = body.clone();
         let http_client = http_client.clone();
@@ -234,20 +234,22 @@ where
         response.and_then(|response| {
             let status = response.status();
             let cluster_info = ClusterInfo::from(response.headers());
-            let body = response.into_body().concat2().map_err(Error::from);
+            let body = hyper::body::aggregate(response.into_body())
+                .err_into()
+                .map_ok(BufExt::reader);
 
-            body.and_then(move |ref body| {
-                if status == StatusCode::NO_CONTENT {
+            body.and_then(move |body| {
+                ready(if status == StatusCode::NO_CONTENT {
                     Ok(Response {
                         data: (),
                         cluster_info,
                     })
                 } else {
-                    match serde_json::from_slice::<ApiError>(body) {
+                    match serde_json::from_reader::<_, ApiError>(body) {
                         Ok(error) => Err(Error::Api(error)),
                         Err(error) => Err(Error::Serialization(error)),
                     }
-                }
+                })
             })
         })
     });
