@@ -382,7 +382,7 @@ fn https() {
 fn https_without_valid_client_certificate() {
     let mut client = TestClient::https(false);
 
-    let work: Box<dyn Future<Item = (), Error = ()> + Send> =
+    let work: Box<dyn Future<Output = Result<() ()>> + Send> =
         Box::new(kv::set(&client, "/test/foo", "bar", Some(60)).then(|res| {
             assert!(res.is_err());
 
@@ -511,7 +511,7 @@ fn update_dir_replaces_key() {
 fn update_dir_requires_existing_dir() {
     let mut client = TestClient::no_destructor();
 
-    let work: Box<dyn Future<Item = (), Error = ()> + Send> =
+    let work: Box<dyn Future<Output = Result<(), ()>> + Send> =
         Box::new(kv::update_dir(&client, "/test", None).then(|res| {
             assert!(res.is_err());
 
@@ -609,7 +609,7 @@ fn watch_cancel() {
     let mut client = TestClient::new();
     let inner_client = client.clone();
 
-    let work: Box<dyn Future<Item = (), Error = ()> + Send> = Box::new(
+    let work: Box<dyn Future<Output = Result<(), ()>> + Send> = Box::new(
         kv::create(&client, "/test/foo", "bar", None)
             .map_err(|errors| WatchError::Other(errors))
             .and_then(move |_| {

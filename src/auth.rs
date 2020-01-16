@@ -417,7 +417,7 @@ impl Permission {
 pub fn create_role<C>(
     client: &Client<C>,
     role: Role,
-) -> impl Future<Item = Response<Role>, Error = Vec<Error>> + Send
+) -> impl Future<Output = Result<Response<Role>, Vec<Error>>> + Send
 where
     C: Clone + Connect + Sync + 'static,
 {
@@ -462,7 +462,7 @@ where
 pub fn create_user<C>(
     client: &Client<C>,
     user: NewUser,
-) -> impl Future<Item = Response<User>, Error = Vec<Error>> + Send
+) -> impl Future<Output = Result<Response<User>, Vec<Error>>> + Send
 where
     C: Clone + Connect + Sync + 'static,
 {
@@ -507,7 +507,7 @@ where
 pub fn delete_role<C, N>(
     client: &Client<C>,
     name: N,
-) -> impl Future<Item = Response<()>, Error = Vec<Error>> + Send
+) -> impl Future<Output = Result<Response<()>, Vec<Error>>> + Send
 where
     C: Clone + Connect + Sync + 'static,
     N: Into<String>,
@@ -545,7 +545,7 @@ where
 pub fn delete_user<C, N>(
     client: &Client<C>,
     name: N,
-) -> impl Future<Item = Response<()>, Error = Vec<Error>> + Send
+) -> impl Future<Output = Result<Response<()>, Vec<Error>>> + Send
 where
     C: Clone + Connect + Sync + 'static,
     N: Into<String>,
@@ -582,7 +582,7 @@ where
 /// Attempts to disable the auth system.
 pub fn disable<C>(
     client: &Client<C>,
-) -> impl Future<Item = Response<AuthChange>, Error = Vec<Error>> + Send
+) -> impl Future<Output = Result<Response<AuthChange>, Vec<Error>>> + Send
 where
     C: Clone + Connect + Sync + 'static,
 {
@@ -620,7 +620,7 @@ where
 /// Attempts to enable the auth system.
 pub fn enable<C>(
     client: &Client<C>,
-) -> impl Future<Item = Response<AuthChange>, Error = Vec<Error>> + Send
+) -> impl Future<Output = Result<Response<AuthChange>, Vec<Error>>> + Send
 where
     C: Clone + Connect + Sync + 'static,
 {
@@ -660,7 +660,7 @@ where
 pub fn get_role<C, N>(
     client: &Client<C>,
     name: N,
-) -> impl Future<Item = Response<Role>, Error = Vec<Error>> + Send
+) -> impl Future<Output = Result<Response<Role>, Vec<Error>>> + Send
 where
     C: Clone + Connect + Sync + 'static,
     N: Into<String>,
@@ -700,7 +700,7 @@ where
 /// Gets all roles.
 pub fn get_roles<C>(
     client: &Client<C>,
-) -> impl Future<Item = Response<Vec<Role>>, Error = Vec<Error>> + Send
+) -> impl Future<Output = Result<Response<Vec<Role>>, Vec<Error>>> + Send
 where
     C: Clone + Connect + Sync + 'static,
 {
@@ -743,7 +743,7 @@ where
 pub fn get_user<C, N>(
     client: &Client<C>,
     name: N,
-) -> impl Future<Item = Response<UserDetail>, Error = Vec<Error>> + Send
+) -> impl Future<Output = Result<Response<UserDetail>, Vec<Error>>> + Send
 where
     C: Clone + Connect + Sync + 'static,
     N: Into<String>,
@@ -783,7 +783,7 @@ where
 /// Gets all users.
 pub fn get_users<C>(
     client: &Client<C>,
-) -> impl Future<Item = Response<Vec<UserDetail>>, Error = Vec<Error>> + Send
+) -> impl Future<Output = Result<Response<Vec<UserDetail>>, Vec<Error>>> + Send
 where
     C: Clone + Connect + Sync + 'static,
 {
@@ -825,7 +825,7 @@ where
 /// Determines whether or not the auth system is enabled.
 pub fn status<C>(
     client: &Client<C>,
-) -> impl Future<Item = Response<bool>, Error = Vec<Error>> + Send
+) -> impl Future<Output = Result<Response<bool>, Vec<Error>>> + Send
 where
     C: Clone + Connect + Sync + 'static,
 {
@@ -870,7 +870,7 @@ where
 pub fn update_role<C>(
     client: &Client<C>,
     role: RoleUpdate,
-) -> impl Future<Item = Response<Role>, Error = Vec<Error>> + Send
+) -> impl Future<Output = Result<Response<Role>, Vec<Error>>> + Send
 where
     C: Clone + Connect + Sync + 'static,
 {
@@ -916,7 +916,7 @@ where
 pub fn update_user<C>(
     client: &Client<C>,
     user: UserUpdate,
-) -> impl Future<Item = Response<User>, Error = Vec<Error>> + Send
+) -> impl Future<Output = Result<Response<User>, Vec<Error>>> + Send
 where
     C: Clone + Connect + Sync + 'static,
 {

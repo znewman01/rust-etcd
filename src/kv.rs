@@ -139,7 +139,7 @@ pub fn compare_and_delete<C>(
     key: &str,
     current_value: Option<&str>,
     current_modified_index: Option<u64>,
-) -> impl Future<Item = Response<KeyValueInfo>, Error = Vec<Error>> + Send
+) -> impl Future<Output = Result<Response<KeyValueInfo>, Vec<Error>>> + Send
 where
     C: Clone + Connect,
 {
@@ -180,7 +180,7 @@ pub fn compare_and_swap<C>(
     ttl: Option<u64>,
     current_value: Option<&str>,
     current_modified_index: Option<u64>,
-) -> impl Future<Item = Response<KeyValueInfo>, Error = Vec<Error>> + Send
+) -> impl Future<Output = Result<Response<KeyValueInfo>, Vec<Error>>> + Send
 where
     C: Clone + Connect,
 {
@@ -216,7 +216,7 @@ pub fn create<C>(
     key: &str,
     value: &str,
     ttl: Option<u64>,
-) -> impl Future<Item = Response<KeyValueInfo>, Error = Vec<Error>> + Send
+) -> impl Future<Output = Result<Response<KeyValueInfo>, Vec<Error>>> + Send
 where
     C: Clone + Connect,
 {
@@ -247,7 +247,7 @@ pub fn create_dir<C>(
     client: &Client<C>,
     key: &str,
     ttl: Option<u64>,
-) -> impl Future<Item = Response<KeyValueInfo>, Error = Vec<Error>> + Send
+) -> impl Future<Output = Result<Response<KeyValueInfo>, Vec<Error>>> + Send
 where
     C: Clone + Connect,
 {
@@ -287,7 +287,7 @@ pub fn create_in_order<C>(
     key: &str,
     value: &str,
     ttl: Option<u64>,
-) -> impl Future<Item = Response<KeyValueInfo>, Error = Vec<Error>> + Send
+) -> impl Future<Output = Result<Response<KeyValueInfo>, Vec<Error>>> + Send
 where
     C: Clone + Connect,
 {
@@ -319,7 +319,7 @@ pub fn delete<C>(
     client: &Client<C>,
     key: &str,
     recursive: bool,
-) -> impl Future<Item = Response<KeyValueInfo>, Error = Vec<Error>> + Send
+) -> impl Future<Output = Result<Response<KeyValueInfo>, Vec<Error>>> + Send
 where
     C: Clone + Connect,
 {
@@ -346,7 +346,7 @@ where
 pub fn delete_dir<C>(
     client: &Client<C>,
     key: &str,
-) -> impl Future<Item = Response<KeyValueInfo>, Error = Vec<Error>> + Send
+) -> impl Future<Output = Result<Response<KeyValueInfo>, Vec<Error>>> + Send
 where
     C: Clone + Connect,
 {
@@ -375,7 +375,7 @@ pub fn get<C>(
     client: &Client<C>,
     key: &str,
     options: GetOptions,
-) -> impl Future<Item = Response<KeyValueInfo>, Error = Vec<Error>> + Send
+) -> impl Future<Output = Result<Response<KeyValueInfo>, Vec<Error>>> + Send
 where
     C: Clone + Connect,
 {
@@ -410,7 +410,7 @@ pub fn set<C>(
     key: &str,
     value: &str,
     ttl: Option<u64>,
-) -> impl Future<Item = Response<KeyValueInfo>, Error = Vec<Error>> + Send
+) -> impl Future<Output = Result<Response<KeyValueInfo>, Vec<Error>>> + Send
 where
     C: Clone + Connect,
 {
@@ -442,7 +442,7 @@ pub fn set_dir<C>(
     client: &Client<C>,
     key: &str,
     ttl: Option<u64>,
-) -> impl Future<Item = Response<KeyValueInfo>, Error = Vec<Error>> + Send
+) -> impl Future<Output = Result<Response<KeyValueInfo>, Vec<Error>>> + Send
 where
     C: Clone + Connect,
 {
@@ -474,7 +474,7 @@ pub fn update<C>(
     key: &str,
     value: &str,
     ttl: Option<u64>,
-) -> impl Future<Item = Response<KeyValueInfo>, Error = Vec<Error>> + Send
+) -> impl Future<Output = Result<Response<KeyValueInfo>, Vec<Error>>> + Send
 where
     C: Clone + Connect,
 {
@@ -508,7 +508,7 @@ pub fn update_dir<C>(
     client: &Client<C>,
     key: &str,
     ttl: Option<u64>,
-) -> impl Future<Item = Response<KeyValueInfo>, Error = Vec<Error>> + Send
+) -> impl Future<Output = Result<Response<KeyValueInfo>, Vec<Error>>> + Send
 where
     C: Clone + Connect,
 {
@@ -545,7 +545,7 @@ pub fn watch<C>(
     client: &Client<C>,
     key: &str,
     options: WatchOptions,
-) -> Box<dyn Future<Item = Response<KeyValueInfo>, Error = WatchError> + Send>
+) -> Box<dyn Future<Output = Result<Response<KeyValueInfo>, WatchError>> + Send>
 where
     C: Clone + Connect,
 {
@@ -583,7 +583,7 @@ fn raw_delete<C>(
     client: &Client<C>,
     key: &str,
     options: DeleteOptions<'_>,
-) -> Box<dyn Future<Item = Response<KeyValueInfo>, Error = Vec<Error>> + Send>
+) -> Box<dyn Future<Output = Result<Response<KeyValueInfo>, Vec<Error>>> + Send>
 where
     C: Clone + Connect,
 {
@@ -663,7 +663,7 @@ fn raw_get<C>(
     client: &Client<C>,
     key: &str,
     options: InternalGetOptions,
-) -> impl Future<Item = Response<KeyValueInfo>, Error = Vec<Error>> + Send
+) -> impl Future<Output = Result<Response<KeyValueInfo>, Vec<Error>>> + Send
 where
     C: Clone + Connect,
 {
@@ -728,7 +728,7 @@ fn raw_set<C>(
     client: &Client<C>,
     key: &str,
     options: SetOptions<'_>,
-) -> Box<dyn Future<Item = Response<KeyValueInfo>, Error = Vec<Error>> + Send>
+) -> Box<dyn Future<Output = Result<Response<KeyValueInfo>, Vec<Error>>> + Send>
 where
     C: Clone + Connect,
 {

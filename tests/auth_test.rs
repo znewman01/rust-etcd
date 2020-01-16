@@ -26,7 +26,7 @@ fn auth() {
 
     let root_user = NewUser::new("root", "secret");
 
-    let work: Box<dyn Future<Item = (), Error = ()> + Send> = Box::new(
+    let work: Box<dyn Future<Output = Result<(), ()>> + Send> = Box::new(
         auth::status(&client)
             .then(move |res| {
                 let response = res.unwrap();

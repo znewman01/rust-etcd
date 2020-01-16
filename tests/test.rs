@@ -82,7 +82,7 @@ where
     #[allow(dead_code)]
     pub fn run<F, O, E>(&mut self, future: F)
     where
-        F: Future<Item = O, Error = E> + Send + 'static,
+        F: Future<Result<O, E>> + Send + 'static,
         O: Send + 'static,
         E: Send + 'static,
     {

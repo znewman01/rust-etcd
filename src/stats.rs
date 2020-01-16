@@ -159,7 +159,7 @@ pub struct StoreStats {
 /// Fails if JSON decoding fails, which suggests a bug in our schema.
 pub fn leader_stats<C>(
     client: &Client<C>,
-) -> impl Future<Item = Response<LeaderStats>, Error = Error> + Send
+) -> impl Future<Output = Result<Response<LeaderStats>, Error>> + Send
 where
     C: Clone + Connect,
 {
@@ -174,7 +174,7 @@ where
 /// Fails if JSON decoding fails, which suggests a bug in our schema.
 pub fn self_stats<C>(
     client: &Client<C>,
-) -> impl Stream<Item = Response<SelfStats>, Error = Error> + Send
+) -> impl Stream<Item = Result<Response<SelfStats>, Error>> + Send
 where
     C: Clone + Connect,
 {
@@ -194,7 +194,7 @@ where
 /// Fails if JSON decoding fails, which suggests a bug in our schema.
 pub fn store_stats<C>(
     client: &Client<C>,
-) -> impl Stream<Item = Response<StoreStats>, Error = Error> + Send
+) -> impl Stream<Item = Result<Response<StoreStats>, Error>> + Send
 where
     C: Clone + Connect,
 {
