@@ -23,10 +23,7 @@ use crate::client::{Client, ClusterInfo, Response};
 use crate::error::{ApiError, Error};
 use crate::first_ok::first_ok;
 use crate::options::{
-    ComparisonConditions,
-    DeleteOptions,
-    GetOptions as InternalGetOptions,
-    SetOptions,
+    ComparisonConditions, DeleteOptions, GetOptions as InternalGetOptions, SetOptions,
 };
 use url::form_urlencoded::Serializer;
 
