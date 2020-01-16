@@ -14,7 +14,7 @@ use hyper::client::connect::Connect;
 use hyper::{StatusCode, Uri};
 use serde_derive::{Deserialize, Serialize};
 use serde_json;
-use tokio::timer::Timeout;
+use tokio::time::Timeout;
 use url::Url;
 
 pub use crate::error::WatchError;
