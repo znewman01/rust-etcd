@@ -1,76 +1,77 @@
-use std::mem::replace;
-use std::vec::IntoIter;
-
-use futures::{Async, Future, Poll};
+use futures::Future;
 use hyper::Uri;
 
 /// Executes the given closure with each cluster member and short-circuit returns the first
-/// successful result. If all members are exhausted without success, the final error is
+/// successful result. If all members are exhausted without success, a vector of all errors is
 /// returned.
-pub fn first_ok<F, T>(endpoints: Vec<Uri>, callback: F) -> FirstOk<F, T>
+pub async fn first_ok<F, G, T, E>(endpoints: Vec<Uri>, callback: F) -> Result<T, Vec<E>>
 where
-    F: Fn(&Uri) -> T,
-    T: Future,
+    F: FnMut(&Uri) -> G,
+    G: Future<Output = Result<T, E>>,
 {
-    let max_errors = endpoints.len();
-
-    FirstOk {
-        callback,
-        current_future: None,
-        endpoints: endpoints.into_iter(),
-        errors: Vec::with_capacity(max_errors),
-    }
+    first_future_ok(endpoints.iter().map(callback)).await
 }
 
-#[derive(Debug)]
-#[must_use = "futures do nothing unless polled"]
-pub struct FirstOk<F, T>
+/// Await all TryFutures in sequence, returning the result (and short-circuiting) if one
+/// completes successfully or a vector of all errors if none does.
+async fn first_future_ok<I, T, E>(futures: I) -> Result<T, Vec<E>>
 where
-    F: Fn(&Uri) -> T,
-    T: Future,
+    I: IntoIterator,
+    I::Item: Future<Output = Result<T, E>>,
 {
-    callback: F,
-    current_future: Option<T>,
-    endpoints: IntoIter<Uri>,
-    errors: Vec<T::Error>,
-}
-
-impl<F, T> Future for FirstOk<F, T>
-where
-    F: Fn(&Uri) -> T,
-    T: Future,
-{
-    type Item = T::Item;
-    type Error = Vec<T::Error>;
-
-    fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
-        if let Some(mut current_future) = self.current_future.take() {
-            match current_future.poll() {
-                Ok(Async::NotReady) => {
-                    self.current_future = Some(current_future);
-
-                    Ok(Async::NotReady)
-                }
-                Ok(Async::Ready(item)) => Ok(Async::Ready(item)),
-                Err(error) => {
-                    self.errors.push(error);
-
-                    self.poll()
-                }
-            }
-        } else {
-            match self.endpoints.next() {
-                Some(endpoint) => {
-                    self.current_future = Some((self.callback)(&endpoint));
-
-                    self.poll()
-                }
-                None => {
-                    let errors = replace(&mut self.errors, vec![]);
-
-                    Err(errors)
-                }
+    let mut errors: Vec<E> = Vec::new();
+    for future in futures {
+        match future.await {
+            Ok(item) => return Ok(item),
+            Err(err) => {
+                errors.push(err);
             }
         }
+    }
+    Err(errors)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use futures::executor::block_on;
+    use futures::future::{ready, Ready};
+    use std::sync::{atomic, Arc};
+
+    #[test]
+    fn test_first_ok_ok() {
+        let futures = vec![ready(Err(0)), ready(Ok(1)), ready(Ok(2))];
+        let actual = block_on(first_future_ok(futures));
+        assert_eq!(actual, Ok(1));
+    }
+
+    #[test]
+    fn test_first_ok_err() {
+        let futures: Vec<Ready<Result<usize, usize>>> = vec![ready(Err(1)), ready(Err(2))];
+        let actual = block_on(first_future_ok(futures));
+        assert_eq!(actual, Err(vec![1, 2]));
+    }
+
+    async fn bump_count(count: Arc<atomic::AtomicUsize>) -> Result<usize, usize> {
+        let value = count.fetch_add(1, atomic::Ordering::Relaxed) + 1;
+        if value == 1 {
+            Ok(value)
+        } else {
+            Err(value)
+        }
+    }
+
+    #[test]
+    fn test_first_ok_short_circuit() {
+        let count = Arc::new(atomic::AtomicUsize::new(0));
+        let futures = vec![
+            bump_count(count.clone()),
+            bump_count(count.clone()),
+            bump_count(count.clone()),
+            bump_count(count.clone()),
+        ];
+        let actual = block_on(first_future_ok(futures));
+        assert_eq!(actual, Ok(1));
+        assert_eq!(count.load(atomic::Ordering::Relaxed), 1);
     }
 }
