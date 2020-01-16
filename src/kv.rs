@@ -141,7 +141,7 @@ pub fn compare_and_delete<C>(
     current_modified_index: Option<u64>,
 ) -> impl Future<Output = Result<Response<KeyValueInfo>, Vec<Error>>> + Send
 where
-    C: Clone + Connect,
+    C: Clone + Connect + Sync + Send,
 {
     raw_delete(
         client,
@@ -182,7 +182,7 @@ pub fn compare_and_swap<C>(
     current_modified_index: Option<u64>,
 ) -> impl Future<Output = Result<Response<KeyValueInfo>, Vec<Error>>> + Send
 where
-    C: Clone + Connect,
+    C: Clone + Connect + Sync + Send,
 {
     raw_set(
         client,
@@ -218,7 +218,7 @@ pub fn create<C>(
     ttl: Option<u64>,
 ) -> impl Future<Output = Result<Response<KeyValueInfo>, Vec<Error>>> + Send
 where
-    C: Clone + Connect,
+    C: Clone + Connect + Sync + Send,
 {
     raw_set(
         client,
@@ -249,7 +249,7 @@ pub fn create_dir<C>(
     ttl: Option<u64>,
 ) -> impl Future<Output = Result<Response<KeyValueInfo>, Vec<Error>>> + Send
 where
-    C: Clone + Connect,
+    C: Clone + Connect + Sync + Send,
 {
     raw_set(
         client,
@@ -289,7 +289,7 @@ pub fn create_in_order<C>(
     ttl: Option<u64>,
 ) -> impl Future<Output = Result<Response<KeyValueInfo>, Vec<Error>>> + Send
 where
-    C: Clone + Connect,
+    C: Clone + Connect + Sync + Send,
 {
     raw_set(
         client,
@@ -321,7 +321,7 @@ pub fn delete<C>(
     recursive: bool,
 ) -> impl Future<Output = Result<Response<KeyValueInfo>, Vec<Error>>> + Send
 where
-    C: Clone + Connect,
+    C: Clone + Connect + Sync + Send,
 {
     raw_delete(
         client,
@@ -348,7 +348,7 @@ pub fn delete_dir<C>(
     key: &str,
 ) -> impl Future<Output = Result<Response<KeyValueInfo>, Vec<Error>>> + Send
 where
-    C: Clone + Connect,
+    C: Clone + Connect + Sync + Send,
 {
     raw_delete(
         client,
@@ -377,7 +377,7 @@ pub fn get<C>(
     options: GetOptions,
 ) -> impl Future<Output = Result<Response<KeyValueInfo>, Vec<Error>>> + Send
 where
-    C: Clone + Connect,
+    C: Clone + Connect + Sync + Send,
 {
     raw_get(
         client,
@@ -412,7 +412,7 @@ pub fn set<C>(
     ttl: Option<u64>,
 ) -> impl Future<Output = Result<Response<KeyValueInfo>, Vec<Error>>> + Send
 where
-    C: Clone + Connect,
+    C: Clone + Connect + Sync + Send,
 {
     raw_set(
         client,
@@ -444,7 +444,7 @@ pub fn set_dir<C>(
     ttl: Option<u64>,
 ) -> impl Future<Output = Result<Response<KeyValueInfo>, Vec<Error>>> + Send
 where
-    C: Clone + Connect,
+    C: Clone + Connect + Sync + Send,
 {
     raw_set(
         client,
@@ -476,7 +476,7 @@ pub fn update<C>(
     ttl: Option<u64>,
 ) -> impl Future<Output = Result<Response<KeyValueInfo>, Vec<Error>>> + Send
 where
-    C: Clone + Connect,
+    C: Clone + Connect + Sync + Send,
 {
     raw_set(
         client,
@@ -510,7 +510,7 @@ pub fn update_dir<C>(
     ttl: Option<u64>,
 ) -> impl Future<Output = Result<Response<KeyValueInfo>, Vec<Error>>> + Send
 where
-    C: Clone + Connect,
+    C: Clone + Connect + Sync + Send,
 {
     raw_set(
         client,
@@ -547,7 +547,7 @@ pub fn watch<C>(
     options: WatchOptions,
 ) -> Box<dyn Future<Output = Result<Response<KeyValueInfo>, WatchError>> + Send>
 where
-    C: Clone + Connect,
+    C: Clone + Connect + Sync + Send,
 {
     let work = raw_get(
         client,
@@ -585,7 +585,7 @@ fn raw_delete<C>(
     options: DeleteOptions<'_>,
 ) -> Box<dyn Future<Output = Result<Response<KeyValueInfo>, Vec<Error>>> + Send>
 where
-    C: Clone + Connect,
+    C: Clone + Connect + Sync + Send,
 {
     let mut query_pairs = HashMap::new();
 
@@ -665,7 +665,7 @@ fn raw_get<C>(
     options: InternalGetOptions,
 ) -> impl Future<Output = Result<Response<KeyValueInfo>, Vec<Error>>> + Send
 where
-    C: Clone + Connect,
+    C: Clone + Connect + Sync + Send,
 {
     let mut query_pairs = HashMap::new();
 
@@ -730,7 +730,7 @@ fn raw_set<C>(
     options: SetOptions<'_>,
 ) -> Box<dyn Future<Output = Result<Response<KeyValueInfo>, Vec<Error>>> + Send>
 where
-    C: Clone + Connect,
+    C: Clone + Connect + Sync + Send,
 {
     let mut http_options = vec![];
 

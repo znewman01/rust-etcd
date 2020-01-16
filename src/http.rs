@@ -10,7 +10,7 @@ use crate::client::BasicAuth;
 #[derive(Clone, Debug)]
 pub struct HttpClient<C>
 where
-    C: Clone + Connect + Sync + 'static,
+    C: Clone + Connect + Sync + Send + 'static,
 {
     basic_auth: Option<BasicAuth>,
     hyper: Hyper<C>,
@@ -18,7 +18,7 @@ where
 
 impl<C> HttpClient<C>
 where
-    C: Clone + Connect + Sync + 'static,
+    C: Clone + Connect + Sync + Send + 'static,
 {
     /// Constructs a new `HttpClient`.
     pub fn new(hyper: Hyper<C>, basic_auth: Option<BasicAuth>) -> Self {

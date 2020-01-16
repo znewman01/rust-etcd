@@ -46,7 +46,7 @@ const XRAFT_TERM: &str = "X-Raft-Term";
 #[derive(Clone, Debug)]
 pub struct Client<C>
 where
-    C: Clone + Connect + Sync + 'static,
+    C: Clone + Connect + Sync + Send + 'static,
 {
     endpoints: Vec<Uri>,
     http_client: HttpClient<C>,
@@ -118,7 +118,7 @@ impl Client<HttpsConnector<HttpConnector>> {
 
 impl<C> Client<C>
 where
-    C: Clone + Connect + Sync + 'static,
+    C: Clone + Connect + Sync + Send + 'static,
 {
     /// Constructs a new client using the provided `hyper::Client`.
     ///

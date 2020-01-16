@@ -55,7 +55,7 @@ pub fn add<C>(
     peer_urls: Vec<String>,
 ) -> Box<dyn Future<Output = Result<Response<()>, Vec<Error>>>>
 where
-    C: Clone + Connect,
+    C: Clone + Connect + Sync + Send,
 {
     let peer_urls = PeerUrls { peer_urls };
 
@@ -112,7 +112,7 @@ pub fn delete<C>(
     id: String,
 ) -> impl Future<Output = Result<Response<()>, Vec<Error>>> + Send
 where
-    C: Clone + Connect,
+    C: Clone + Connect + Sync + Send,
 {
     let http_client = client.http_client().clone();
 
@@ -157,7 +157,7 @@ pub fn list<C>(
     client: &Client<C>,
 ) -> impl Future<Output = Result<Response<Vec<Member>>, Vec<Error>>> + Send
 where
-    C: Clone + Connect,
+    C: Clone + Connect + Sync + Send,
 {
     let http_client = client.http_client().clone();
 
@@ -209,7 +209,7 @@ pub fn update<C>(
     peer_urls: Vec<String>,
 ) -> Box<dyn Future<Output = Result<Response<()>, Vec<Error>>>>
 where
-    C: Clone + Connect,
+    C: Clone + Connect + Sync + Send,
 {
     let peer_urls = PeerUrls { peer_urls };
 

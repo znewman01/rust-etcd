@@ -419,7 +419,7 @@ pub fn create_role<C>(
     role: Role,
 ) -> impl Future<Output = Result<Response<Role>, Vec<Error>>> + Send
 where
-    C: Clone + Connect + Sync + 'static,
+    C: Clone + Connect + Sync + Send + 'static,
 {
     let http_client = client.http_client().clone();
 
@@ -464,7 +464,7 @@ pub fn create_user<C>(
     user: NewUser,
 ) -> impl Future<Output = Result<Response<User>, Vec<Error>>> + Send
 where
-    C: Clone + Connect + Sync + 'static,
+    C: Clone + Connect + Sync + Send + 'static,
 {
     let http_client = client.http_client().clone();
 
@@ -509,7 +509,7 @@ pub fn delete_role<C, N>(
     name: N,
 ) -> impl Future<Output = Result<Response<()>, Vec<Error>>> + Send
 where
-    C: Clone + Connect + Sync + 'static,
+    C: Clone + Connect + Sync + Send + 'static,
     N: Into<String>,
 {
     let http_client = client.http_client().clone();
@@ -547,7 +547,7 @@ pub fn delete_user<C, N>(
     name: N,
 ) -> impl Future<Output = Result<Response<()>, Vec<Error>>> + Send
 where
-    C: Clone + Connect + Sync + 'static,
+    C: Clone + Connect + Sync + Send + 'static,
     N: Into<String>,
 {
     let http_client = client.http_client().clone();
@@ -584,7 +584,7 @@ pub fn disable<C>(
     client: &Client<C>,
 ) -> impl Future<Output = Result<Response<AuthChange>, Vec<Error>>> + Send
 where
-    C: Clone + Connect + Sync + 'static,
+    C: Clone + Connect + Sync + Send + 'static,
 {
     let http_client = client.http_client().clone();
 
@@ -622,7 +622,7 @@ pub fn enable<C>(
     client: &Client<C>,
 ) -> impl Future<Output = Result<Response<AuthChange>, Vec<Error>>> + Send
 where
-    C: Clone + Connect + Sync + 'static,
+    C: Clone + Connect + Sync + Send + 'static,
 {
     let http_client = client.http_client().clone();
 
@@ -662,7 +662,7 @@ pub fn get_role<C, N>(
     name: N,
 ) -> impl Future<Output = Result<Response<Role>, Vec<Error>>> + Send
 where
-    C: Clone + Connect + Sync + 'static,
+    C: Clone + Connect + Sync + Send + 'static,
     N: Into<String>,
 {
     let http_client = client.http_client().clone();
@@ -702,7 +702,7 @@ pub fn get_roles<C>(
     client: &Client<C>,
 ) -> impl Future<Output = Result<Response<Vec<Role>>, Vec<Error>>> + Send
 where
-    C: Clone + Connect + Sync + 'static,
+    C: Clone + Connect + Sync + Send + 'static,
 {
     let http_client = client.http_client().clone();
 
@@ -745,7 +745,7 @@ pub fn get_user<C, N>(
     name: N,
 ) -> impl Future<Output = Result<Response<UserDetail>, Vec<Error>>> + Send
 where
-    C: Clone + Connect + Sync + 'static,
+    C: Clone + Connect + Sync + Send + 'static,
     N: Into<String>,
 {
     let http_client = client.http_client().clone();
@@ -785,7 +785,7 @@ pub fn get_users<C>(
     client: &Client<C>,
 ) -> impl Future<Output = Result<Response<Vec<UserDetail>>, Vec<Error>>> + Send
 where
-    C: Clone + Connect + Sync + 'static,
+    C: Clone + Connect + Sync + Send + 'static,
 {
     let http_client = client.http_client().clone();
 
@@ -827,7 +827,7 @@ pub fn status<C>(
     client: &Client<C>,
 ) -> impl Future<Output = Result<Response<bool>, Vec<Error>>> + Send
 where
-    C: Clone + Connect + Sync + 'static,
+    C: Clone + Connect + Sync + Send + 'static,
 {
     let http_client = client.http_client().clone();
 
@@ -872,7 +872,7 @@ pub fn update_role<C>(
     role: RoleUpdate,
 ) -> impl Future<Output = Result<Response<Role>, Vec<Error>>> + Send
 where
-    C: Clone + Connect + Sync + 'static,
+    C: Clone + Connect + Sync + Send + 'static,
 {
     let http_client = client.http_client().clone();
 
@@ -918,7 +918,7 @@ pub fn update_user<C>(
     user: UserUpdate,
 ) -> impl Future<Output = Result<Response<User>, Vec<Error>>> + Send
 where
-    C: Clone + Connect + Sync + 'static,
+    C: Clone + Connect + Sync + Send + 'static,
 {
     let http_client = client.http_client().clone();
 

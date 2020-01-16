@@ -161,7 +161,7 @@ pub fn leader_stats<C>(
     client: &Client<C>,
 ) -> impl Future<Output = Result<Response<LeaderStats>, Error>> + Send
 where
-    C: Clone + Connect,
+    C: Clone + Connect + Sync + Send,
 {
     let url = build_url(&client.endpoints()[0], "v2/stats/leader");
     let uri = url.parse().map_err(Error::from).into_future();
@@ -176,7 +176,7 @@ pub fn self_stats<C>(
     client: &Client<C>,
 ) -> impl Stream<Item = Result<Response<SelfStats>, Error>> + Send
 where
-    C: Clone + Connect,
+    C: Clone + Connect + Sync + Send,
 {
     let futures = client.endpoints().iter().map(|endpoint| {
         let url = build_url(&endpoint, "v2/stats/self");
@@ -196,7 +196,7 @@ pub fn store_stats<C>(
     client: &Client<C>,
 ) -> impl Stream<Item = Result<Response<StoreStats>, Error>> + Send
 where
-    C: Clone + Connect,
+    C: Clone + Connect + Sync + Send,
 {
     let futures = client.endpoints().iter().map(|endpoint| {
         let url = build_url(&endpoint, "v2/stats/store");
