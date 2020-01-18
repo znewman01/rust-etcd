@@ -28,7 +28,7 @@
 //! Basic usage:
 //!
 //! ```no_run
-//! use etcd::Client;
+//! use etcd::{Client, Error};
 //! use etcd::kv::{self, Action};
 //! use futures::Future;
 //! use tokio::runtime::Runtime;
@@ -40,24 +40,24 @@
 //!     let client = Client::new(&["http://etcd.example.com:2379"], None).unwrap();
 //!
 //!     // Set the key "/foo" to the value "bar" with no expiration.
-//!     let work = kv::set(&client, "/foo", "bar", None).and_then(move |_| {
+//!     let work = async {
+//!         kv::set(&client, "/foo", "bar", None).await?;
 //!         // Once the key has been set, ask for details about it.
-//!         let get_request = kv::get(&client, "/foo", kv::GetOptions::default());
+//!         let response = kv::get(&client, "/foo", kv::GetOptions::default()).await?;
 //!
-//!         get_request.and_then(|response| {
-//!             // The information returned tells you what kind of operation was performed.
-//!             assert_eq!(response.data.action, Action::Get);
+//!         // The information returned tells you what kind of operation was performed.
+//!         assert_eq!(response.data.action, Action::Get);
 //!
-//!             // The value of the key is what we set it to previously.
-//!             assert_eq!(response.data.node.value, Some("bar".to_string()));
+//!         // The value of the key is what we set it to previously.
+//!         assert_eq!(response.data.node.value, Some("bar".to_string()));
 //!
-//!             // Each API call also returns information about the etcd cluster extracted from
-//!             // HTTP response headers.
-//!             assert!(response.cluster_info.etcd_index.is_some());
+//!         // Each API call also returns information about the etcd cluster extracted from
+//!         // HTTP response headers.
+//!         assert!(response.cluster_info.etcd_index.is_some());
 //!
-//!             Ok(())
-//!         })
-//!     });
+//!         let ret: Result<(), Vec<Error>> = Ok(());
+//!         ret
+//!     };
 //!
 //!     // Start the event loop, driving the asynchronous code to completion.
 //!     assert!(Runtime::new().unwrap().block_on(work).is_ok());

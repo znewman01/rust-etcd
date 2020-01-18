@@ -147,13 +147,13 @@ where
     /// use std::fs::File;
     /// use std::io::Read;
     ///
-    /// use futures::Future;
+    /// use futures::{Future, TryFutureExt};
     /// use hyper::client::HttpConnector;
     /// use hyper_tls::HttpsConnector;
     /// use native_tls::{Certificate, TlsConnector, Identity};
     /// use tokio::runtime::Runtime;
     ///
-    /// use etcd::{Client, kv};
+    /// use etcd::{Client, kv, Error};
     ///
     /// fn main() {
     ///     let mut ca_cert_file = File::open("ca.der").unwrap();
@@ -170,25 +170,20 @@ where
     ///
     ///     let tls_connector = builder.build().unwrap();
     ///
-    ///     let mut http_connector = HttpConnector::new(4);
-    ///     http_connector.enforce_http(false);
-    ///     let https_connector = HttpsConnector::from((http_connector, tls_connector));
+    ///     let https_connector = HttpsConnector::new();
     ///
-    ///     let hyper = hyper::Client::builder().build(https_connector);
+    ///     let hyper = hyper::Client::builder().build::<_, hyper::Body>(https_connector);
     ///
     ///     let client = Client::custom(hyper, &["https://etcd.example.com:2379"], None).unwrap();
     ///
-    ///     let work = kv::set(&client, "/foo", "bar", None).and_then(move |_| {
-    ///         let get_request = kv::get(&client, "/foo", kv::GetOptions::default());
-    ///
-    ///         get_request.and_then(|response| {
-    ///             let value = response.data.node.value.unwrap();
-    ///
-    ///             assert_eq!(value, "bar".to_string());
-    ///
-    ///             Ok(())
-    ///         })
-    ///     });
+    ///     let work = async {
+    ///         kv::set(&client, "/foo", "bar", None).await?;
+    ///         let response = kv::get(&client, "/foo", kv::GetOptions::default()).await?;
+    ///         let value = response.data.node.value.unwrap();
+    ///         assert_eq!(value, "bar".to_string());
+    ///         let ret: Result<(), Vec<Error>> = Ok(());
+    ///         ret
+    ///     };
     ///
     ///     assert!(Runtime::new().unwrap().block_on(work).is_ok());
     /// }
