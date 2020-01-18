@@ -3,7 +3,7 @@ use std::io::Read;
 use std::ops::Deref;
 
 use etcd::{kv, Client};
-use futures::Future;
+use futures::{Future, FutureExt};
 use hyper::client::connect::Connect;
 use hyper::client::{Client as Hyper, HttpConnector};
 use hyper_tls::HttpsConnector;
@@ -13,7 +13,7 @@ use tokio::runtime::Runtime;
 /// Wrapper around Client that automatically cleans up etcd after each test.
 pub struct TestClient<C>
 where
-    C: Clone + Connect + Sync + 'static,
+    C: Clone + Connect + Sync + Send + 'static,
 {
     c: Client<C>,
     run_destructor: bool,
@@ -59,13 +59,9 @@ impl TestClient<HttpConnector> {
             builder.identity(Identity::from_pkcs12(&pkcs12_buffer, "secret").unwrap());
         }
 
-        let tls_connector = builder.build().unwrap();
+        let https_connector = HttpsConnector::new();
 
-        let mut http_connector = HttpConnector::new(1);
-        http_connector.enforce_http(false);
-        let https_connector = HttpsConnector::from((http_connector, tls_connector));
-
-        let hyper = Hyper::builder().build(https_connector);
+        let hyper = Hyper::builder().build::<_, hyper::Body>(https_connector);
 
         TestClient {
             c: Client::custom(hyper, &["https://etcdsecure:2379"], None).unwrap(),
@@ -77,28 +73,26 @@ impl TestClient<HttpConnector> {
 
 impl<C> TestClient<C>
 where
-    C: Clone + Connect + Sync + 'static,
+    C: Clone + Connect + Sync + Send + 'static,
 {
     #[allow(dead_code)]
     pub fn run<F, O, E>(&mut self, future: F)
     where
-        F: Future<Result<O, E>> + Send + 'static,
+        F: Future<Output = Result<O, E>> + Send + 'static,
         O: Send + 'static,
         E: Send + 'static,
     {
-        let _ = self.runtime.block_on(future.map(|_| ()).map_err(|_| ()));
+        let _ = self.runtime.block_on(future.map(|_| ()));
     }
 }
 
 impl<C> Drop for TestClient<C>
 where
-    C: Clone + Connect + Sync + 'static,
+    C: Clone + Connect + Sync + Send + 'static,
 {
     fn drop(&mut self) {
         if self.run_destructor {
-            let future = kv::delete(&self.c, "/test", true)
-                .map(|_| ())
-                .map_err(|_| ());
+            let future = kv::delete(&self.c, "/test", true).map(|_| ());
 
             let _ = self.runtime.block_on(future);
         }
@@ -107,7 +101,7 @@ where
 
 impl<C> Deref for TestClient<C>
 where
-    C: Clone + Connect + Sync + 'static,
+    C: Clone + Connect + Sync + Send + 'static,
 {
     type Target = Client<C>;
 

@@ -1,5 +1,5 @@
 use etcd::stats;
-use futures::{Future, Stream};
+use futures::TryStreamExt;
 
 use crate::test::TestClient;
 
@@ -18,7 +18,7 @@ fn leader_stats() {
 fn self_stats() {
     let mut client = TestClient::no_destructor();
 
-    let work = stats::self_stats(&client).collect().and_then(|_| Ok(()));
+    let work = stats::self_stats(&client).try_collect::<Vec<_>>(); // Future<Output = Result<Vec<_>, _>>
 
     client.run(work);
 }
@@ -27,7 +27,7 @@ fn self_stats() {
 fn store_stats() {
     let mut client = TestClient::no_destructor();
 
-    let work = stats::store_stats(&client).collect().and_then(|_| Ok(()));
+    let work = stats::store_stats(&client).try_collect::<Vec<_>>();
 
     client.run(work);
 }
