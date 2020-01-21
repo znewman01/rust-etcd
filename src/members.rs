@@ -6,7 +6,7 @@ use std::str::FromStr;
 
 use bytes::buf::BufExt;
 use futures::future::ready;
-use futures::{Future, TryFutureExt};
+use futures::TryFutureExt;
 use hyper::client::connect::Connect;
 use hyper::{StatusCode, Uri};
 use serde_derive::{Deserialize, Serialize};
@@ -52,10 +52,10 @@ struct ListResponse {
 ///
 /// * client: A `Client` to use to make the API call.
 /// * peer_urls: URLs exposing this cluster member's peer API.
-pub fn add<C>(
+pub async fn add<C>(
     client: &Client<C>,
     peer_urls: Vec<String>,
-) -> Box<dyn Future<Output = Result<Response<()>, Vec<Error>>>>
+) -> Result<Response<()>, Vec<Error>>
 where
     C: Clone + Connect + Sync + Send,
 {
@@ -63,12 +63,12 @@ where
 
     let body = match serde_json::to_string(&peer_urls) {
         Ok(body) => body,
-        Err(error) => return Box::new(ready(Err(vec![Error::Serialization(error)]))),
+        Err(error) => return Err(vec![Error::Serialization(error)]),
     };
 
     let http_client = client.http_client().clone();
 
-    let result = first_ok(client.endpoints().to_vec(), move |member| {
+    first_ok(client.endpoints().to_vec(), move |member| {
         let url = build_url(member, "");
         let uri = ready(Uri::from_str(url.as_str()).map_err(Error::from));
 
@@ -84,8 +84,8 @@ where
                 .map_ok(BufExt::reader)
                 .err_into();
 
-            body.and_then(move |body| {
-                ready(if status == StatusCode::CREATED {
+            body.and_then(move |body| async move{
+                if status == StatusCode::CREATED {
                     Ok(Response {
                         data: (),
                         cluster_info,
@@ -95,12 +95,10 @@ where
                         Ok(error) => Err(Error::Api(error)),
                         Err(error) => Err(Error::Serialization(error)),
                     }
-                })
+                }
             })
         })
-    });
-
-    Box::new(result)
+    }).await
 }
 
 /// Deletes a member from the cluster.
@@ -109,10 +107,10 @@ where
 ///
 /// * client: A `Client` to use to make the API call.
 /// * id: The unique identifier of the member to delete.
-pub fn delete<C>(
+pub async fn delete<C>(
     client: &Client<C>,
     id: String,
-) -> impl Future<Output = Result<Response<()>, Vec<Error>>> + Send
+) -> Result<Response<()>, Vec<Error>>
 where
     C: Clone + Connect + Sync + Send,
 {
@@ -133,8 +131,8 @@ where
                 .map_ok(BufExt::reader)
                 .err_into();
 
-            body.and_then(move |body| {
-                ready(if status == StatusCode::NO_CONTENT {
+            body.and_then(move |body| async move {
+                if status == StatusCode::NO_CONTENT {
                     Ok(Response {
                         data: (),
                         cluster_info,
@@ -144,10 +142,10 @@ where
                         Ok(error) => Err(Error::Api(error)),
                         Err(error) => Err(Error::Serialization(error)),
                     }
-                })
+                }
             })
         })
-    })
+    }).await
 }
 
 /// Lists the members of the cluster.
@@ -178,8 +176,8 @@ where
                 .map_ok(BufExt::reader)
                 .err_into();
 
-            body.and_then(move |body| {
-                ready(if status == StatusCode::OK {
+            body.and_then(move |body| async move {
+                if status == StatusCode::OK {
                     match serde_json::from_reader::<_, ListResponse>(body) {
                         Ok(data) => Ok(Response {
                             data: data.members,
@@ -192,10 +190,10 @@ where
                         Ok(error) => Err(Error::Api(error)),
                         Err(error) => Err(Error::Serialization(error)),
                     }
-                })
+                }
             })
-        }).await
-    })
+        })
+    }).await
 }
 
 /// Updates the peer URLs of a member of the cluster.
@@ -205,11 +203,11 @@ where
 /// * client: A `Client` to use to make the API call.
 /// * id: The unique identifier of the member to update.
 /// * peer_urls: URLs exposing this cluster member's peer API.
-pub fn update<C>(
+pub async fn update<C>(
     client: &Client<C>,
     id: String,
     peer_urls: Vec<String>,
-) -> Box<dyn Future<Output = Result<Response<()>, Vec<Error>>>>
+) -> Result<Response<()>, Vec<Error>>
 where
     C: Clone + Connect + Sync + Send,
 {
@@ -217,12 +215,12 @@ where
 
     let body = match serde_json::to_string(&peer_urls) {
         Ok(body) => body,
-        Err(error) => return Box::new(ready(Err(vec![Error::Serialization(error)]))),
+        Err(error) => return Err(vec![Error::Serialization(error)]),
     };
 
     let http_client = client.http_client().clone();
 
-    let result = first_ok(client.endpoints().to_vec(), move |member| {
+    first_ok(client.endpoints().to_vec(), move |member| {
         let url = build_url(member, &format!("/{}", id));
         let uri = ready(Uri::from_str(url.as_str()).map_err(Error::from));
 
@@ -238,8 +236,8 @@ where
                 .err_into()
                 .map_ok(BufExt::reader);
 
-            body.and_then(move |body| {
-                ready(if status == StatusCode::NO_CONTENT {
+            body.and_then(move |body| async move{
+                if status == StatusCode::NO_CONTENT {
                     Ok(Response {
                         data: (),
                         cluster_info,
@@ -249,12 +247,10 @@ where
                         Ok(error) => Err(Error::Api(error)),
                         Err(error) => Err(Error::Serialization(error)),
                     }
-                })
+                }
             })
         })
-    });
-
-    Box::new(result)
+    }).await
 }
 
 /// Constructs the full URL for an API call.

@@ -233,8 +233,8 @@ where
                     .map_ok(BufExt::reader)
                     .err_into();
 
-                body.and_then(move |body| {
-                    ready(if status == StatusCode::OK {
+                body.and_then(move |body| async move {
+                    if status == StatusCode::OK {
                         match serde_json::from_reader::<_, Health>(body) {
                             Ok(data) => Ok(Response { data, cluster_info }),
                             Err(error) => Err(Error::Serialization(error)),
@@ -244,7 +244,7 @@ where
                             Ok(error) => Err(Error::Api(error)),
                             Err(error) => Err(Error::Serialization(error)),
                         }
-                    })
+                    }
                 })
             })
             })
@@ -265,8 +265,8 @@ where
                     .err_into()
                     .map_ok(BufExt::reader);
 
-                body.and_then(move |body| {
-                    ready(if status == StatusCode::OK {
+                body.and_then(move |body| async move {
+                    if status == StatusCode::OK {
                         match serde_json::from_reader::<_, VersionInfo>(body) {
                             Ok(data) => Ok(Response { data, cluster_info }),
                             Err(error) => Err(Error::Serialization(error)),
@@ -276,7 +276,7 @@ where
                             Ok(error) => Err(Error::Api(error)),
                             Err(error) => Err(Error::Serialization(error)),
                         }
-                    })
+                    }
                 })
             })
             })
@@ -284,10 +284,10 @@ where
     }
 
     /// Lets other internal code make basic HTTP requests.
-    pub(crate) fn request<U, T>(
+    pub(crate) async fn request<U, T>(
         &self,
         uri: U,
-    ) -> impl Future<Output = Result<Response<T>, Error>> + Send
+    ) -> Result<Response<T>, Error>
     where
         U: Future<Output = Result<Uri, Error>> + Send,
         T: DeserializeOwned + Send + 'static,
@@ -301,8 +301,8 @@ where
                 .err_into()
                 .map_ok(BufExt::reader);
 
-            body.and_then(move |body| {
-                ready(if status == StatusCode::OK {
+            body.and_then(move |body| async move {
+                if status == StatusCode::OK {
                     match serde_json::from_reader::<_, T>(body) {
                         Ok(data) => Ok(Response { data, cluster_info }),
                         Err(error) => Err(Error::Serialization(error)),
@@ -312,9 +312,9 @@ where
                         Ok(error) => Err(Error::Api(error)),
                         Err(error) => Err(Error::Serialization(error)),
                     }
-                })
+                }
             })
-        })
+        }).await
     }
 }
 
